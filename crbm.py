@@ -8,8 +8,10 @@ Created on Wed Jul 11 14:39:14 2018
 import tensorflow as tf
 
 class ConvRBM():
-    def __init__(self, Nv, Nw, K):
-        # sizes object has: Nv, Nw, K
+    def __init__(self, Nv, Nw, K, filter_w, hid_b, vis_b):
+        # filter: (Nw, Nw, 1, K)
+        # hid_bias: (K,)
+        # vis_bias: (1,)
         self.Nv, self.Nw, self.K = Nv, Nw, K
         self.Nh = self.Nv - self.Nw + 1
         
@@ -17,13 +19,10 @@ class ConvRBM():
         self.hidden  = tf.placeholder(tf.float32)
         
         # Initialization according to Hinton Sec. 8
-        self.filter = tf.Variable(
-                tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), 
-                                 stddev=0.01), dtype=tf.float32)
-        
-        self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
-        self.vis_bias = tf.Variable(tf.zeros(shape=(1,)), dtype=tf.float32)
-    
+        self.filter = tf.Variable(filter_w, dtype=tf.float32)
+        self.hid_bias = tf.Variable(hid_b, dtype=tf.float32)
+        self.vis_bias = tf.Variable(vis_b, dtype=tf.float32)
+                    
     def prob_given_v(self, v):
         x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
         return tf.sigmoid(tf.add(x, self.hid_bias))
@@ -44,7 +43,7 @@ class ConvRBM():
             v = self.sample_tensor(self.prob_given_h(h))
         return v
     
-    def sample_visible(self, n_samples, k=1):
+    def create_gibbs_sampler_random(self, n_samples, k=1):
         h_samples = tf.Variable(self.sample_tensor(
                 tf.constant(0.5, shape=(n_samples, self.Nh, self.Nh, self.K))), 
                                   trainable=False)
@@ -64,7 +63,54 @@ class ConvRBM():
         t3 = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
         
         return -tf.add(t1, tf.add(t2, t3))
+            
+    def free_energy(self, v):
+        x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
+        x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
+        t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=(1,2)))
     
+    def mean_free_energy(self):
+        ## Creates a graph for free energy calculation
+        return tf.reduce_mean(self.free_energy(self.visible))
+            
+    @staticmethod
+    def sample_tensor(prob):
+        # Returns binary tensor according to probability distribution prob
+        shape = tf.shape(prob)
+        return tf.where(
+            tf.less(tf.random_uniform(shape=shape), prob),
+            tf.ones(shape=shape),
+            tf.zeros(shape=shape))
+        
+class ConvRBM_Train(ConvRBM):
+    def __init__(self, args):
+        self.args = args
+        
+        self.Nv, self.Nw, self.K = args.L, args.Nw, args.K
+        self.Nh = self.Nv - self.Nw + 1
+        
+        self.visible = tf.placeholder(tf.float32)
+        self.hidden  = tf.placeholder(tf.float32)
+        
+        # Initialization according to Hinton Sec. 8
+        self.filter = tf.Variable(
+                tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), 
+                                 stddev=0.01), dtype=tf.float32)
+        
+        self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
+        self.vis_bias = tf.Variable(tf.zeros(shape=(1,)), dtype=tf.float32)
+        
+    def create_assign_weights_ops(self):
+        ## Creates ops for assigning weights during training
+        self.filter_plc = tf.placeholder(tf.float32)
+        self.hid_bias_plc = tf.placeholder(tf.float32)
+        self.vis_bias_plc = tf.placeholder(tf.float32)
+        
+        self.assign_filter = self.filter.assign(self.filter_plc)
+        self.assign_hid_bias = self.hid_bias.assign(self.hid_bias_plc)
+        self.assign_vis_bias = self.vis_bias.assign(self.vis_bias_plc)
+        
     def loss_for_grad(self, v, k=2):
         # sample hidden from data
         h_data = tf.stop_gradient(self.sample_tensor(self.prob_given_v(v)))
@@ -91,58 +137,20 @@ class ConvRBM():
         
         return tf.reduce_mean(tf.subtract(data_term, recon_term))
     
-    def prepare_training(self, k=2, learning_rate=0.01, batch_size=50):
+    def prepare_training(self):
         #variables for sampling (num_samples is the number of samples to return):
         # from Torlai PSI tutorial
         self.hidden_samples = tf.Variable(
-                self.sample_tensor(tf.constant(0.5, shape=(batch_size, self.Nh, self.Nh, self.K))), 
+                self.sample_tensor(tf.constant(0.5, shape=(self.args.BS, self.Nh, self.Nh, self.K))), 
                                   trainable=False)
 
-        loss = self.loss_for_grad(v=self.visible, k=k)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-        self.train = optimizer.minimize(loss)
+        loss = self.loss_for_grad(v=self.visible, k=self.args.GBTR)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.args.LR)
+        self.train_op = optimizer.minimize(loss)
         
-    def free_energy(self, v):
-        x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
-        x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
-        t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
-        return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=(1,2)))
-    
-    def mean_free_energy(self):
-        ## Creates a graph for free energy calculation
-        return tf.reduce_mean(self.free_energy(self.visible))
+        if self.args.WUP:
+            self.create_assign_weights_ops()
         
-    @staticmethod
-    def sample_tensor(prob):
-        # Returns binary tensor according to probability distribution prob
-        shape = tf.shape(prob)
-        return tf.where(
-            tf.less(tf.random_uniform(shape=shape), prob),
-            tf.ones(shape=shape),
-            tf.zeros(shape=shape))
-    
-#Nv, Nw, K = 8, 4, 10
-#n_samples = 10000
-#batch_size = 1000
-#epochs = 30
-#n_batches = n_samples // batch_size
-#
-#crbm = ConvRBM(Nv=Nv, Nw=Nw, K=K)
-#
-#data = np.ones((n_samples, Nv, Nv, 1))
-#rbm = ConvRBM(Nv, Nw, K)
-#rbm.prepare_training(k=10)
-#v_gibbs = rbm.create_gibbs_sampler(k=4)
-#
-#sess = tf.Session()
-#sess.run(tf.global_variables_initializer())
-#for iE in range(epochs):
-#    for iB in range(n_batches):
-#        sess.run(rbm.train, 
-#                 feed_dict={rbm.visible : data[iB * batch_size : (iB+1) * batch_size]})
-#        
-#    print('%d / %d epochs done!'%(iE+1, epochs))
-#    
-## Test
-#v_test = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(
-#        0, 2, size=(5000, Nv, Nv, 1))})
+        ## Create validation ops
+        self.v_gibbs_op = self.create_gibbs_sampler(k=self.args.GBTE)
+        self.v_gibbs_rand_op = self.create_gibbs_sampler_random(self.args.nTE, k=self.args.GBTE)
