@@ -6,10 +6,8 @@ Created on Thu Jul 12 12:39:25 2018
 """
 
 import numpy as np
-import tensorflow as tf
-from crbm import ConvRBM
-from ising import get_observables_with_corr_and_tpf
-from data.loaders import read_file_critical, add_index
+from trainer import Trainer
+from data.loaders import add_index
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -27,6 +25,11 @@ parser.add_argument('-EP', type=int, default=500, help='number of epochs')
 parser.add_argument('-BS', type=int, default=1000, help='batch size')
 parser.add_argument('-LR', type=float, default=0.01, help='learning rate')
 
+## Average weights during training
+parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
+parser.add_argument('-WAVNR', type=int, default=5, help='number of weights to average')
+parser.add_argument('-WAVST', type=int, default=5, help='step to make the updates')
+
 ## RBM parameters
 parser.add_argument('-Nw', type=int, default=5, help='filter size')
 parser.add_argument('-K', type=int, default=20, help='hidden groups')
@@ -37,60 +40,25 @@ parser.add_argument('-GBTE', type=int, default=1, help='Gibbs for testing')
 parser.add_argument('-MSG', type=int, default=10, help='epoch message')
 parser.add_argument('-MSGC', type=int, default=40, help='calculation message')
 
-args = parser.parse_args()
 
-## Load data and calculate original observables
-if args.CR:
-    T = 2 / np.log(1 + np.sqrt(2))
+def main(args):
+    if args.CR:
+        from data.loaders import read_file_critical
+        T = 2 / np.log(1 + np.sqrt(2))
+        data = add_index(read_file_critical(L=args.L, n_samples=args.nTR))
+        
+    else:
+        from data.loaders import read_file, temp_partition
+        from data.directories import T_list
+        T = T_list[args.iT]
+        data = add_index(temp_partition(read_file(L=args.L, n_samples=args.nTR), args.iT))
+        
+    rbm = Trainer(args)
+    print('Temperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
+    print('RBM with %d visible units and %d hidden units.'%(args.Nv**2, rbm.Nh**2*rbm.K))
+    rbm.prepare_training()
+    rbm.fit(data, T)
     
-    data = add_index(read_file_critical(L=args.L, n_samples=args.nTR))
-    obs_correct = get_observables_with_corr_and_tpf(data[:,:,:,0], T)
+    return
     
-else:
-    from data.loaders import read_file, temp_partition
-    from data.directories import T_list
-    T = T_list[args.iT]
-    
-    data = add_index(temp_partition(read_file(L=args.L, n_samples=args.nTR), args.iT))
-    obs_correct = get_observables_with_corr_and_tpf(data[:,:,:,0], T)
-
-n_batches = data.shape[0] // args.BS
-
-## Define RBM model
-rbm = ConvRBM(args.L, args.Nw, args.K)
-rbm.prepare_training(k=args.GBTR, learning_rate=args.LR, batch_size=args.BS)
-v_gibbs = rbm.create_gibbs_sampler(k=args.GBTE)
-v_gibbs_rand = rbm.sample_visible(args.nTE, k=args.GBTE)
-free_energy = rbm.mean_free_energy()
-
-print('Temperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
-print('RBM with %d visible units and %d hidden units.'%(rbm.Nv**2, rbm.Nh**2*rbm.K))
-
-## Define tf session with GPU options
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=args.GPU)
-sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-
-## Train
-sess.run(tf.global_variables_initializer())
-for iE in range(args.EP):
-    np.random.shuffle(data)
-    for iB in range(n_batches):
-        sess.run(rbm.train, 
-                 feed_dict={rbm.visible : data[iB * args.BS : (iB+1) * args.BS]})
-    
-    if iE % args.MSG == 0:
-        v_recon = sess.run(v_gibbs, feed_dict={rbm.visible : data})
-        mse_error = np.mean(np.square(v_recon - data))
-        #v_rand = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(0, 2, data.shape)})
-        #mse_error_random = np.mean(np.square(v_rand - data))   ## GIVES 0.5 as it should
-        en_calc = sess.run(free_energy, feed_dict={rbm.visible : data[:args.nVAL]})
-        print('\n%d / %d epochs done!\nFree energy: %.5f\nMSE: %.5E\n'%(iE+1, args.EP, en_calc, mse_error))
-    
-    ## Test
-    if iE % args.MSGC == 0:
-        #v_test = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(
-        #        0, 2, size=(args.nTE, args.L, args.L, 1))})[:,:,:,0]
-        v_test = sess.run(v_gibbs_rand)[:,:,:,0]
-        obs_test = get_observables_with_corr_and_tpf(v_test, T)
-        err_obs = np.abs(obs_test - obs_correct) * 100 / obs_correct
-        print(err_obs)
+main(parser.parse_args())
