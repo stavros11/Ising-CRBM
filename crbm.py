@@ -44,6 +44,18 @@ class ConvRBM():
             v = self.sample_tensor(self.prob_given_h(h))
         return v
     
+    def sample_visible(self, n_samples, k=1):
+        h_samples = tf.Variable(self.sample_tensor(
+                tf.constant(0.5, shape=(n_samples, self.Nh, self.Nh, self.K))), 
+                                  trainable=False)
+        
+        v_samples = self.sample_tensor(self.prob_given_h(h_samples))
+        for i in range(1, k):
+            h_samples = self.sample_tensor(self.prob_given_v(v_samples))
+            v_samples = self.sample_tensor(self.prob_given_h(h_samples))
+        
+        return v_samples
+    
     def calculate_energy(self, v, h):
         c = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
         t1 = tf.reduce_sum(tf.multiply(h, c), axis=(1,2,3))
