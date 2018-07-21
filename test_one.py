@@ -58,8 +58,9 @@ n_batches = data.shape[0] // args.BS
 
 ## Define RBM model
 rbm = ConvRBM(args.L, args.Nw, args.K)
-rbm.prepare_training(k=args.GBTR, learning_rate=args.LR)
+rbm.prepare_training(k=args.GBTR, learning_rate=args.LR, batch_size=args.BS)
 v_gibbs = rbm.create_gibbs_sampler(k=args.GBTE)
+v_gibbs_rand = rbm.sample_visible(args.nTE, k=args.GBTE)
 free_energy = rbm.mean_free_energy()
 
 print('Temperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
@@ -78,14 +79,18 @@ for iE in range(args.EP):
                  feed_dict={rbm.visible : data[iB * args.BS : (iB+1) * args.BS]})
     
     if iE % args.MSG == 0:
+        v_recon = sess.run(v_gibbs, feed_dict={rbm.visible : data})
+        mse_error = np.mean(np.square(v_recon - data))
+        #v_rand = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(0, 2, data.shape)})
+        #mse_error_random = np.mean(np.square(v_rand - data))   ## GIVES 0.5 as it should
         en_calc = sess.run(free_energy, feed_dict={rbm.visible : data[:args.nVAL]})
-        print('%d / %d epochs done! - Free energy: %.5f'%(iE+1, args.EP, en_calc))
+        print('\n%d / %d epochs done!\nFree energy: %.5f\nMSE: %.5E\n'%(iE+1, args.EP, en_calc, mse_error))
     
     ## Test
     if iE % args.MSGC == 0:
-        v_test = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(
-                0, 2, size=(args.nTE, args.L, args.L, 1))})[:,:,:,0]
-    
+        #v_test = sess.run(v_gibbs, feed_dict={rbm.visible : np.random.randint(
+        #        0, 2, size=(args.nTE, args.L, args.L, 1))})[:,:,:,0]
+        v_test = sess.run(v_gibbs_rand)[:,:,:,0]
         obs_test = get_observables_with_corr_and_tpf(v_test, T)
         err_obs = np.abs(obs_test - obs_correct) * 100 / obs_correct
         print(err_obs)
