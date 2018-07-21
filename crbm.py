@@ -71,17 +71,33 @@ class ConvRBM():
         data_term = self.calculate_energy(v, h_data)
         
         # CD-k
-        h_recon = tf.stop_gradient(self.sample_tensor(self.prob_given_v(v)))
-        v_recon = self.sample_tensor(self.prob_given_h(h_recon))
+#        h_recon = tf.stop_gradient(self.sample_tensor(self.prob_given_v(v)))
+#        v_recon = self.sample_tensor(self.prob_given_h(h_recon))
+#        for i in range(1, k):
+#            h_recon = self.sample_tensor(self.prob_given_v(v_recon))
+#            v_recon = self.sample_tensor(self.prob_given_h(h_recon))
+#        h_recon = self.prob_given_v(v_recon)
+#        recon_term = self.calculate_energy(v_recon, h_recon)
+        
+        h_samples = self.hidden_samples
+        v_samples = tf.stop_gradient(self.sample_tensor(self.prob_given_h(h_samples)))
+        h_samples = self.sample_tensor(self.prob_given_v(v_samples))
         for i in range(1, k):
-            h_recon = self.sample_tensor(self.prob_given_v(v_recon))
-            v_recon = self.sample_tensor(self.prob_given_h(h_recon))
-        h_recon = self.prob_given_v(v_recon)
-        recon_term = self.calculate_energy(v_recon, h_recon)
+            v_samples = self.sample_tensor(self.prob_given_h(h_samples))
+            h_samples = self.sample_tensor(self.prob_given_v(v_samples))
+        self.hidden_samples = self.hidden_samples.assign(h_samples)
+        
+        recon_term = self.calculate_energy(v_samples, self.hidden_samples)
         
         return tf.reduce_mean(tf.subtract(data_term, recon_term))
     
-    def prepare_training(self, k=2, learning_rate=0.01):
+    def prepare_training(self, k=2, learning_rate=0.01, batch_size=50):
+        #variables for sampling (num_samples is the number of samples to return):
+        # from Torlai PSI tutorial
+        self.hidden_samples = tf.Variable(
+                self.sample_tensor(tf.constant(0.5, shape=(batch_size, self.Nh, self.Nh, self.K))), 
+                                  trainable=False)
+
         loss = self.loss_for_grad(v=self.visible, k=k)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
         self.train = optimizer.minimize(loss)
