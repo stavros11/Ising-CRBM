@@ -148,8 +148,11 @@ class ConvRBM_Train(ConvRBM):
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.args.LR)
         self.train_op = optimizer.minimize(loss)
         
-        if self.args.WUP:
+        if self.args.WAVEP != None:
             self.create_assign_weights_ops()
+        else:
+            # Set a number > Epochs so that we never run the averaging during Trainer.fit
+            self.args.WAVEP = self.args.EP + 10
         
         ## Create validation ops
         self.v_gibbs_op = self.create_gibbs_sampler(k=self.args.GBTE)
