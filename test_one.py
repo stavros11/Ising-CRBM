@@ -31,6 +31,8 @@ parser.add_argument('-LR', type=float, default=0.001, help='initial learning rat
 #parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
 # only linear lR decay fixed currently
 parser.add_argument('-LRF', type=float, default=0.001, help='final learning rate')
+parser.add_argument('-LREP', type=int, default=500, help='epoch to start learning rate decay')
+
 
 ## Average weights during training
 parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
