@@ -16,7 +16,6 @@ class ConvRBM():
         self.Nh = self.Nv - self.Nw + 1
         
         self.visible = tf.placeholder(tf.float32)
-        self.hidden  = tf.placeholder(tf.float32)
         
         # Initialization according to Hinton Sec. 8
         self.filter = tf.Variable(filter_w, dtype=tf.float32)
@@ -69,11 +68,7 @@ class ConvRBM():
         x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
         t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
         return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=(1,2)))
-    
-    def mean_free_energy(self):
-        ## Creates a graph for free energy calculation
-        return tf.reduce_mean(self.free_energy(self.visible))
-            
+                
     @staticmethod
     def sample_tensor(prob):
         # Returns binary tensor according to probability distribution prob
@@ -91,7 +86,6 @@ class ConvRBM_Train(ConvRBM):
         self.Nh = self.Nv - self.Nw + 1
         
         self.visible = tf.placeholder(tf.float32)
-        self.hidden  = tf.placeholder(tf.float32)
         
         # Initialization according to Hinton Sec. 8
         self.filter = tf.Variable(
@@ -161,3 +155,4 @@ class ConvRBM_Train(ConvRBM):
         ## Create validation ops
         self.v_gibbs_recon_op = self.create_gibbs_sampler(k=self.args.GBMSE)
         self.v_gibbs_test_op = self.create_gibbs_sampler_random(self.args.BSC, k=self.args.GBTE)
+        self.free_energy_op = tf.reduce_mean(self.free_energy(self.visible))
