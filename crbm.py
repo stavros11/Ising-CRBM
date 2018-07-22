@@ -140,7 +140,7 @@ class ConvRBM_Train(ConvRBM):
         
         ## For learning rate decay
         self.learning_rate_plc = tf.placeholder(tf.float32, shape=[])
-        self.linear_lr_update = (self.args.LR - self.args.LRF) / self.args.EP
+        self.linear_lr_update = (self.args.LR - self.args.LRF) / (self.args.EP - self.args.LREP)
 
         loss = self.loss_for_grad(v=self.visible, k=self.args.GBTR)
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
