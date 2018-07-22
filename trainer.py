@@ -50,7 +50,8 @@ class Trainer(ConvRBM_Train):
             
             self.update_weight_lists(sess)
             ## Linear LR decay
-            self.learning_rate -= self.linear_lr_update
+            if iE >= self.args.LREP:
+                self.learning_rate -= self.linear_lr_update
             
             ## Calculate MSE in train and validation dataset and free energy ratio
             if iE % self.args.MSG == 0:
