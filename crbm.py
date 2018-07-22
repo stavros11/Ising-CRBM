@@ -100,7 +100,7 @@ class ConvRBM_Train(ConvRBM):
         
         self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
         self.vis_bias = tf.Variable(tf.zeros(shape=(1,)), dtype=tf.float32)
-        
+                
     def create_assign_weights_ops(self):
         ## Creates ops for assigning weights during training
         self.filter_plc = tf.placeholder(tf.float32)
@@ -143,9 +143,13 @@ class ConvRBM_Train(ConvRBM):
         self.hidden_samples = tf.Variable(
                 self.sample_tensor(tf.constant(0.5, shape=(self.args.BS, self.Nh, self.Nh, self.K))), 
                                   trainable=False)
+        
+        ## For learning rate decay
+        self.learning_rate_plc = tf.placeholder(tf.float32, shape=[])
+        self.linear_lr_update = (self.args.LR - self.args.LRF) / self.args.EP
 
         loss = self.loss_for_grad(v=self.visible, k=self.args.GBTR)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.args.LR)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
         self.train_op = optimizer.minimize(loss)
         
         if self.args.WAVEP != None:
@@ -155,5 +159,5 @@ class ConvRBM_Train(ConvRBM):
             self.args.WAVEP = self.args.EP + 10
         
         ## Create validation ops
-        self.v_gibbs_op = self.create_gibbs_sampler(k=self.args.GBTE)
-        self.v_gibbs_rand_op = self.create_gibbs_sampler_random(self.args.nTE, k=self.args.GBTE)
+        self.v_gibbs_recon_op = self.create_gibbs_sampler(k=self.args.GBMSE)
+        self.v_gibbs_test_op = self.create_gibbs_sampler_random(self.args.BSC, k=self.args.GBTE)
