@@ -6,7 +6,7 @@ Created on Thu Jul 12 12:39:25 2018
 """
 
 import numpy as np
-from trainer import Trainer
+from networks.trainer import Trainer
 from data.loaders import add_index, create_directory
 from argparse import ArgumentParser
 
@@ -31,8 +31,14 @@ parser.add_argument('-LR', type=float, default=0.001, help='initial learning rat
 #parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
 # only linear lR decay fixed currently
 parser.add_argument('-LRF', type=float, default=0.001, help='final learning rate')
-parser.add_argument('-LREP', type=int, default=500, help='epoch to start learning rate decay')
+parser.add_argument('-LREP', type=int, default=1000, help='epoch to start learning rate decay')
 
+## Early stopping options
+parser.add_argument('-ES', type=bool, default=False, help='use early stopping')
+#parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
+# only linear lR decay fixed currently
+parser.add_argument('-ESPAT', type=int, default=20, help='early stopping patience')
+parser.add_argument('-ESTHR', type=int, default=0.001, help='early stopping threshold')
 
 ## Average weights during training
 parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
@@ -79,15 +85,25 @@ def main(args):
     print('RBM with %d visible units and %d hidden units.'%(rbm.Nv**2, rbm.Nh**2*rbm.K))
     print('Number of weight parameters: %d.\n'%(rbm.Nw**2*rbm.K))
     rbm.prepare_training()
-    W, hb, vb, metrics = rbm.fit(train_data=train_data, val_data=val_data, T=T)
     
-    # Save weights and biases list
+    # Set up directories for saving
     save_dir += '/CRBM_EP%dBS%dLR%.5f_VER%d'%(args.EP, args.BS, args.LR, args.VER)
+    if args.ES:
+        save_dir += '_ES'
     create_directory(save_dir)
+    
+    if args.ES:
+        W, hb, vb, mse_train, metrics = rbm.fit_early_stopping(train_data=train_data, val_data=val_data, T=T)
+        np.save('%s/metrics.npy'%save_dir, np.array(metrics))
+        np.save('%s/mse_train.npy'%save_dir, np.array(mse_train))
+      
+    else:
+        W, hb, vb, metrics = rbm.fit(train_data=train_data, val_data=val_data, T=T)
+        np.save('%s/metrics.npy'%save_dir, np.array(metrics))
+
     np.save('%s/weights.npy'%save_dir, np.array(W))
     np.save('%s/hid_bias.npy'%save_dir, np.array(hb))
     np.save('%s/vis_bias.npy'%save_dir, np.array(vb))
-    np.save('%s/metrics.npy'%save_dir, np.array(metrics))
     
     np.save('%s/trained_weights.npy'%save_dir, np.array(W)[-1])
     np.save('%s/trained_hid_bias.npy'%save_dir, np.array(hb)[-1])
