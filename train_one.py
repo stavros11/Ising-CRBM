@@ -37,8 +37,8 @@ parser.add_argument('-LREP', type=int, default=1000, help='epoch to start learni
 parser.add_argument('-ES', type=bool, default=False, help='use early stopping')
 #parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
 # only linear lR decay fixed currently
-parser.add_argument('-ESPAT', type=int, default=20, help='early stopping patience')
-parser.add_argument('-ESTHR', type=int, default=0.001, help='early stopping threshold')
+parser.add_argument('-ESPAT', type=int, default=30, help='early stopping patience')
+parser.add_argument('-ESTHR', type=float, default=1e-5, help='early stopping threshold')
 
 ## Average weights during training
 parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
