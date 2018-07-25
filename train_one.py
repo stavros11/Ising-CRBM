@@ -87,7 +87,8 @@ def main(args):
     rbm.prepare_training()
     
     # Set up directories for saving
-    save_dir += '/CRBM_EP%dBS%dLR%.5f_VER%d'%(args.EP, args.BS, args.LR, args.VER)
+    save_dir += '/CRBM_L%dW%dK%d_EP%dBS%dLR%.5f_VER%d'%(args.L, rbm.Nw, rbm.K, 
+                                                        args.EP, args.BS, args.LR, args.VER)
     if args.ES:
         save_dir += '_ES'
     create_directory(save_dir)
