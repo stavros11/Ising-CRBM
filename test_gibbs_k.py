@@ -85,7 +85,7 @@ def main(args):
             
             ## Debugging
             print('\n')
-            print(sampled)
+            print(sampled[:,:,:,0])
             print('\n')
             
         obs_pred = obs_prediction.mean(axis=0)
@@ -99,10 +99,9 @@ def main(args):
         print(reconstr_error)
     
     ## Print observables
-    print('\nCorrect Observables:')
-    print(obs_correct)
-    print('\nPredicted Observables:')
-    print(obs_pred)
+    print('\nCorrect vs Predicted Observables:')
+    for (cor, pred) in zip(obs_correct, obs_pred):
+        print('%.6f  -  %.6f'%(cor, pred))
     
     return
 
