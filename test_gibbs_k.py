@@ -41,7 +41,8 @@ def main(args):
         T = T_list[args.iT]
         
         rbm, rbm_name = get_model(args.Mind, Nv=args.L, critical=False, T=T)
-        data = dl.read_file(L=args.L, n_samples=10000, train=False)
+        data = dl.temp_partition(dl.read_file(L=args.L, n_samples=10000, train=False),
+                                 args.iT)
     
     ## Calculate MC observables
     obs_correct = get_observables_with_corr_and_tpf(data, T)
@@ -81,15 +82,27 @@ def main(args):
         for iB in range(n_batches):
             sampled = sess.run(ops)
             obs_prediction[iB] = get_observables_with_corr_and_tpf(sampled[:,:,:,0], T)
+            
+            ## Debugging
+            print('\n')
+            print(sampled)
+            print('\n')
+            
+        obs_pred = obs_prediction.mean(axis=0)
+        sampling_error = np.abs(obs_pred - obs_correct) * 100 / obs_correct
         
-        sampling_error = np.abs(obs_prediction.mean(axis=0)- obs_correct) * 100 / obs_correct
-    
     print('\nGibbs k=%d'%args.GBk)
     print('\nSampling:')
     print(sampling_error)
     if args.REC:
         print('\nReconstruction:')
         print(reconstr_error)
+    
+    ## Print observables
+    print('\nCorrect Observables:')
+    print(obs_correct)
+    print('\nPredicted Observables:')
+    print(obs_pred)
     
     return
 
