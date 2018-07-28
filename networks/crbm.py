@@ -8,11 +8,12 @@ Created on Wed Jul 11 14:39:14 2018
 import tensorflow as tf
 
 class ConvRBM():
-    def __init__(self, Nv, Nw, K, filter_w, hid_b, vis_b):
+    def __init__(self, Nv, filter_w, hid_b, vis_b):
         # filter: (Nw, Nw, 1, K)
         # hid_bias: (K,)
         # vis_bias: (1,)
-        self.Nv, self.Nw, self.K = Nv, Nw, K
+        self.Nv = Nv
+        self.Nw, self.K = filter_w.shape[0], filter_w.shape[-1]
         self.Nh = self.Nv - self.Nw + 1
         
         self.visible = tf.placeholder(tf.float32)
@@ -157,7 +158,8 @@ class ConvRBM_Train(ConvRBM):
             self.linear_lr_update = (self.args.LR - self.args.LRF) / (self.args.EP - self.args.LREP)
 
         loss = self.loss_for_grad(v=self.visible, k=self.args.GBTR)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
+        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
+        optimizer = tf.train.AdamOptimizer()
         self.train_op = optimizer.minimize(loss)
         
         if self.args.WAVEP != None:
