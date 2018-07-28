@@ -6,8 +6,7 @@ Created on Thu Jul 12 12:39:25 2018
 """
 
 import numpy as np
-from networks.trainer import Trainer
-from data.loaders import add_index, create_directory
+import data.loaders import dl
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
@@ -26,13 +25,6 @@ parser.add_argument('-EP', type=int, default=500, help='number of epochs')
 parser.add_argument('-BS', type=int, default=50, help='batch size')
 parser.add_argument('-BSC', type=int, default=5000, help='calculation batch size (for memory)')
 
-## Learning rate options
-parser.add_argument('-LR', type=float, default=0.001, help='initial learning rate')
-#parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
-# only linear lR decay fixed currently
-parser.add_argument('-LRF', type=float, default=0.001, help='final learning rate')
-parser.add_argument('-LREP', type=int, default=1000, help='epoch to start learning rate decay')
-
 ## Early stopping options
 parser.add_argument('-ES', type=bool, default=False, help='use early stopping')
 #parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
@@ -40,14 +32,23 @@ parser.add_argument('-ES', type=bool, default=False, help='use early stopping')
 parser.add_argument('-ESPAT', type=int, default=30, help='early stopping patience')
 parser.add_argument('-ESTHR', type=float, default=1e-5, help='early stopping threshold')
 
+## Learning rate options
+parser.add_argument('-LR', type=float, default=0.001, help='initial learning rate')
+#parser.add_argument('-LRD', type=bool, default=False, help='learning rate decay')
+# only linear lR decay fixed currently
+parser.add_argument('-LRF', type=float, default=0.001, help='final learning rate')
+parser.add_argument('-LREP', type=int, default=1000, help='epoch to start learning rate decay')
+
 ## Average weights during training
 parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
 parser.add_argument('-WAVNR', type=int, default=5, help='number of weights to average')
 parser.add_argument('-WAVST', type=int, default=5, help='step to make the updates')
 
-## RBM parameters
-parser.add_argument('-Nw', type=int, default=5, help='filter size')
-parser.add_argument('-K', type=int, default=20, help='hidden groups')
+## RBM convolutions parameters
+parser.add_argument('-Nw', nargs='+', type=int, default=None, help='filter size')
+parser.add_argument('-K', nargs='+', type=int, default=None, help='hidden groups')
+
+## RBM Gibbs sampling parameters
 parser.add_argument('-GBTR', type=int, default=20, help='Gibbs for CD')
 parser.add_argument('-GBMSE', type=int, default=1, help='Gibbs for testing')
 parser.add_argument('-GBTE', type=int, default=5, help='Gibbs for testing')
@@ -57,58 +58,50 @@ parser.add_argument('-MSG', type=int, default=2, help='epoch message')
 parser.add_argument('-MSGT', type=int, default=10, help='observables test message')
 
 
-def main(args):    
+def main(args):
+    ## Decide if deep or not
+    assert len(args.K) == len(args.Nw)
+    if len(args.K) > 1:
+        from networks.trainer_deep import Trainer
+        args.WAVEP = None ##!!! we have not fixed weight averaging for deep model yet!
+    else:
+        from networks.trainer import Trainer
+        # Make Nw and K integers
+        args.Nw, args.K = args.Nw[0], args.K[0]
+    
+    ## Load data
     if args.CR:
-        from data.loaders import read_file_critical
         T = 2 / np.log(1 + np.sqrt(2))
-
-        save_dir = 'Weights/Critical'
+        save_dir = 'Trained_Models/Critical'
         
-        data = add_index(read_file_critical(L=args.L, n_samples=100000))
+        data = dl.add_index(dl.read_file_critical(L=args.L, n_samples=100000))
         train_data = data[:args.nTR]
         val_data = data[args.nTR : args.nTR + args.nVAL]
 
     else:
-        from data.loaders import read_file, temp_partition
         from data.directories import T_list
         T = T_list[args.iT]
+        save_dir = 'Trained_Models/T%.4f'%T_list[args.iT]
         
-        save_dir = 'Weights/T%.4f'%T_list[args.iT]
-        
-        train_data = add_index(temp_partition(read_file(L=args.L, n_samples=10000, train=True), args.iT))
-        val_data = add_index(temp_partition(read_file(L=args.L, n_samples=10000, train=False), args.iT))
-        
-    create_directory(save_dir)
-    
+        train_data = dl.add_index(dl.temp_partition(dl.read_file(L=args.L, n_samples=10000, 
+                                                                 train=True), args.iT))
+        val_data = dl.add_index(dl.temp_partition(dl.read_file(L=args.L, n_samples=10000, 
+                                                               train=False), args.iT))
+            
+    ## Prepare RBM
     rbm = Trainer(args)
     print('\nTemperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
     print('RBM with %d visible units and %d hidden units.'%(rbm.Nv**2, rbm.Nh**2*rbm.K))
     print('Number of weight parameters: %d.\n'%(rbm.Nw**2*rbm.K))
     rbm.prepare_training()
     
-    # Set up directories for saving
-    save_dir += '/CRBM_L%dW%dK%d_EP%dBS%dLR%.5f_VER%d'%(args.L, rbm.Nw, rbm.K, 
-                                                        args.EP, args.BS, args.LR, args.VER)
-    if args.ES:
-        save_dir += '_ES'
+    ## Set up directory for saving
+    create_directory(save_dir)
+    save_dir += '/%s'%(rbm.name)
     create_directory(save_dir)
     
-    if args.ES:
-        W, hb, vb, mse_train, metrics = rbm.fit_early_stopping(train_data=train_data, val_data=val_data, T=T)
-        np.save('%s/metrics.npy'%save_dir, np.array(metrics))
-        np.save('%s/mse_train.npy'%save_dir, np.array(mse_train))
-      
-    else:
-        W, hb, vb, metrics = rbm.fit(train_data=train_data, val_data=val_data, T=T)
-        np.save('%s/metrics.npy'%save_dir, np.array(metrics))
-
-    np.save('%s/weights.npy'%save_dir, np.array(W))
-    np.save('%s/hid_bias.npy'%save_dir, np.array(hb))
-    np.save('%s/vis_bias.npy'%save_dir, np.array(vb))
-    
-    np.save('%s/trained_weights.npy'%save_dir, np.array(W)[-1])
-    np.save('%s/trained_hid_bias.npy'%save_dir, np.array(hb)[-1])
-    np.save('%s/trained_vis_bias.npy'%save_dir, np.array(vb)[-1])
+    ## Train and save
+    rbm.fit_and_save(train_data, val_data, directory=save_dir)
     
     return
     
