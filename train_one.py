@@ -91,8 +91,9 @@ def main(args):
     ## Prepare RBM
     rbm = Trainer(args)
     print('\nTemperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
-    print('RBM with %d visible units and %d hidden units.'%(rbm.Nv**2, rbm.Nh**2*rbm.K))
-    print('Number of weight parameters: %d.\n'%(rbm.Nw**2*rbm.K))
+    print('Created RBM with %d visible units.'%(rbm.Nv**2))
+    print(args.K)
+    print('\n')
     rbm.prepare_training()
     
     ## Set up directory for saving
