@@ -6,7 +6,7 @@ Created on Thu Jul 12 12:39:25 2018
 """
 
 import numpy as np
-import data.loaders import dl
+import data.loaders as dl
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
