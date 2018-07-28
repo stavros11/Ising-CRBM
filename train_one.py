@@ -96,9 +96,9 @@ def main(args):
     rbm.prepare_training()
     
     ## Set up directory for saving
-    create_directory(save_dir)
+    dl.create_directory(save_dir)
     save_dir += '/%s'%(rbm.name)
-    create_directory(save_dir)
+    dl.create_directory(save_dir)
     
     ## Train and save
     rbm.fit_and_save(train_data, val_data, directory=save_dir)
