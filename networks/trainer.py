@@ -11,6 +11,33 @@ from crbm import ConvRBM_Train
 #from ising import get_observables_with_corr_and_tpf
 
 class Trainer(ConvRBM_Train):
+    def create_session(self):
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.args.GPU)
+        self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
+        self.sess.run(tf.global_variables_initializer())
+        
+    def fit_and_save(self, train_data, val_data, directory):
+        self.create_session()
+        
+        if self.args.ES:
+            metrics_mse, metrics_rest = self.fit_early_stopping(train_data, val_data)
+            np.save('%s/metrics_mse.npy'%directory, metrics_mse)
+            np.save('%s/metrics_rest.npy'%directory, metrics_rest)
+            
+        else:
+            metrics = self.fit(train_data, val_data)
+            np.save('%s/metrics.npy'%directory, metrics)
+                    
+        ## Save weights
+        np.save('%s/weights.npy'%directory, np.array(self.W_list))
+        np.save('%s/hid_bias.npy'%directory, np.array(self.hid_bias_list))
+        np.save('%s/vis_bias.npy'%directory, np.array(self.vis_bias_list))
+        
+        np.save('%s/trained_weights.npy'%directory, np.array(self.W_list)[-1])
+        np.save('%s/trained_hid_bias.npy'%directory, np.array(self.hid_bias_list)[-1])
+        np.save('%s/trained_vis_bias.npy'%directory, np.array(self.vis_bias_list)[-1])
+    
     def fit(self, train_data, val_data, T):
         train_batches = train_data.shape[0] // self.args.BS
 #        obs_correct = get_observables_with_corr_and_tpf(train_data[:,:,:,0], T)
@@ -87,7 +114,7 @@ class Trainer(ConvRBM_Train):
             if iE >= self.args.WAVEP and (iE - self.args.WAVEP) % self.args.WAVST == 0:
                 self.update_network_weights(sess)
                 
-        return self.W_list, self.hid_bias_list, self.vis_bias_list, metrics
+        return metrics
     
     def fit_early_stopping(self, train_data, val_data, T):
         train_batches = train_data.shape[0] // self.args.BS
@@ -194,7 +221,7 @@ class Trainer(ConvRBM_Train):
     
             iE += 1
         
-        return self.W_list, self.hid_bias_list, self.vis_bias_list, metrics_mse_train, metrics_rest
+        return metrics_mse_train, metrics_rest
 
     def update_weight_lists(self, sess):
         W_temp, hid_bias_temp, vis_bias_temp = sess.run([self.filter, self.hid_bias, self.vis_bias])
