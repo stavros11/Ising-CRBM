@@ -188,7 +188,8 @@ class ConvRBM_Train(ConvRBM):
             self.linear_lr_update = (self.args.LR - self.args.LRF) / (self.args.EP - self.args.LREP)
 
         loss = self.loss_for_grad(v=self.visible, k=self.args.GBTR)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
+        #optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate_plc)
+        optimizer = tf.train.AdamOptimizer()
         self.train_op = optimizer.minimize(loss)
         
         ## Create validation ops
