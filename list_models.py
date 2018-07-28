@@ -14,10 +14,10 @@ parser.add_argument('-iT', type=int, default=0, help='temperature index')
 args = parser.parse_args()
 
 if args.CR:
-    models_dir = 'Weights/Critical'
+    models_dir = 'Trained_Models/Critical'
 else:
     from data.directories import T_list
-    models_dir = 'Weights/T%.4f'%T_list[args.iT]
+    models_dir = 'Trained_Models/T%.4f'%T_list[args.iT]
 
 print(args.CR)
 print(listdir(models_dir))
