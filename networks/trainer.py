@@ -38,7 +38,7 @@ class Trainer(ConvRBM_Train):
         np.save('%s/trained_hid_bias.npy'%directory, np.array(self.hid_bias_list)[-1])
         np.save('%s/trained_vis_bias.npy'%directory, np.array(self.vis_bias_list)[-1])
     
-    def fit(self, train_data, val_data, T):
+    def fit(self, train_data, val_data):
         train_batches = train_data.shape[0] // self.args.BS
 #        obs_correct = get_observables_with_corr_and_tpf(train_data[:,:,:,0], T)
         
@@ -116,7 +116,7 @@ class Trainer(ConvRBM_Train):
                 
         return metrics
     
-    def fit_early_stopping(self, train_data, val_data, T):
+    def fit_early_stopping(self, train_data, val_data):
         train_batches = train_data.shape[0] // self.args.BS
 #        obs_correct = get_observables_with_corr_and_tpf(train_data[:,:,:,0], T)
         
