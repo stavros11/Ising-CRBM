@@ -94,6 +94,16 @@ class ConvRBM_Train(ConvRBM):
         
         self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
         self.vis_bias = tf.Variable(tf.zeros(shape=(1,)), dtype=tf.float32)
+        
+    def create_name(self):
+        self.name = 'CRBML%d_W%dK%d'%(self.Nv, self.Nw, self.K)
+                
+        self.name += 'BS%dLR%.5f_VER%d'%(self.args.BS, self.args.LR, self.args.VER)
+        
+        if self.args.ES:
+            self.name += '_ES'
+        else:
+            self.name += '_EP%d'%(self.args.EP)
                 
     def create_assign_weights_ops(self):
         ## Creates ops for assigning weights during training
