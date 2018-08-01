@@ -29,10 +29,11 @@ parser.add_argument('-kF', type=int, default=40, help='Gibbs sampling k')
 
 def main(args):
     if args.CR:
+        critical_n_samples = {8 : 40000, 16 : 100000}
         T = 2 / np.log(1 + np.sqrt(2))
         
         rbm, rbm_name = get_model(args.Mind, Nv=args.L, critical=True)
-        data = dl.read_file_critical(L=args.L, n_samples=100000, train=False)
+        data = dl.read_file_critical(L=args.L, n_samples=critical_n_samples[args.L], train=False)
         
     else:
         from data.directories import T_list
