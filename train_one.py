@@ -59,11 +59,14 @@ parser.add_argument('-MSGT', type=int, default=10, help='observables test messag
 
 
 def main(args):
+    critical_n_samples = {8 : 40000, 16 : 100000}
+    
     ## Decide if deep or not
     assert len(args.K) == len(args.Nw)
     if len(args.K) > 1:
         from networks.trainer_deep import Trainer
         args.WAVEP = None ##!!! we have not fixed weight averaging for deep model yet!
+        
     else:
         from networks.trainer import Trainer
         # Make Nw and K integers
@@ -74,26 +77,32 @@ def main(args):
         T = 2 / np.log(1 + np.sqrt(2))
         save_dir = 'Trained_Models/Critical'
         
-        data = dl.add_index(dl.read_file_critical(L=args.L, n_samples=100000))
+        data = dl.add_index(dl.read_file_critical(L=args.L, n_samples=critical_n_samples[args.L]))
         train_data = data[:args.nTR]
         val_data = data[args.nTR : args.nTR + args.nVAL]
 
     else:
         from data.directories import T_list
         T = T_list[args.iT]
-        save_dir = 'Trained_Models/T%.4f'%T_list[args.iT]
+        save_dir = 'Trained_Models/T%.4f'%T
         
         train_data = dl.add_index(dl.temp_partition(dl.read_file(L=args.L, n_samples=10000, 
                                                                  train=True), args.iT))
         val_data = dl.add_index(dl.temp_partition(dl.read_file(L=args.L, n_samples=10000, 
                                                                train=False), args.iT))
-            
+        
     ## Prepare RBM
     rbm = Trainer(args)
     print('\nTemperature: %.4f  -  Critical: %s'%(T, str(args.CR)))
-    print('Created RBM with %d visible units.'%(rbm.Nv**2))
-    print(args.K)
-    print('\n')
+    if isinstance(args.K, int):
+        print('RBM with %d visible units and %d hidden units.'%(rbm.Nv**2, rbm.Nh**2*rbm.K))
+        print('Number of weight parameters: %d.\n'%(rbm.Nw**2*rbm.K))
+        
+    else:
+        print('Created RBM with %d visible units.'%(rbm.Nv**2))
+        print(args.K)
+        print('\n')
+        
     rbm.prepare_training()
     
     ## Set up directory for saving
