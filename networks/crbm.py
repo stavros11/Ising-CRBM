@@ -99,6 +99,8 @@ class ConvRBM_Train(ConvRBM):
                 hid_b=tf.zeros(shape=(self.K,)),
                 vis_b=tf.zeros(shape=(self.Nv, self.Nv, 1)))
         
+        self.create_name()
+        
     def create_name(self):
         self.name = 'CRBML%d_W%dK%d'%(self.Nv, self.Nw, self.K)
                 

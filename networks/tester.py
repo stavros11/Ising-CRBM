@@ -51,7 +51,7 @@ class Tester(ConvRBM):
         obs_prediction = np.zeros([self.n_batches, self.n_observables])
         pred_samples = np.zeros([self.args.nTE, self.Nv, self.Nv, 1])
         for iB in range(self.n_batches):
-            pred_batch = self.sess.run(self.random_op)
+            pred_batch = self.sess.run(self.init_op)
             
             obs_prediction[iB] = get_observables_with_corr_and_tpf(pred_batch[:,:,:,0], self.T)
             pred_samples[iB * self.args.BSC : (iB+1) * self.args.BSC] = np.copy(pred_batch)
@@ -80,11 +80,12 @@ class Tester(ConvRBM):
             samples, obs_temp = self.predict_block(samples)
             self.obs_list.append(obs_temp)
             
-            ## Print observables
-            print('\nCorrect vs Predicted Observables with k=%d:'%k)
-            for (cor, pred) in zip(self.obs_list[0], self.obs_list[-1]):
-                print('%.6f  -  %.6f'%(cor, pred))
-            print('\n')
+            if (k - self.args.kI) % self.args.MSG == 0:
+                ## Print observables
+                print('\nCorrect vs Predicted Observables with k=%d:'%k)
+                for (cor, pred) in zip(self.obs_list[0], self.obs_list[-1]):
+                    print('%.6f  -  %.6f'%(cor, pred))
+                print('\n')
         
         return np.array(self.obs_list)
         
