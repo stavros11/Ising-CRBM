@@ -19,6 +19,7 @@ parser.add_argument('-L', type=int, default=16, help='configuration size')
 ## Model parameters
 parser.add_argument('-Mind', type=int, default=0, help='model index')
 parser.add_argument('-GPU', type=float, default=0.4, help='GPU fraction')
+parser.add_argument('-MSG', type=int, default=10, help='k step for messages')
 
 ## Test parameters
 parser.add_argument('-nTE', type=int, default=50000, help='RBM sampling test size')
