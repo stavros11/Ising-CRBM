@@ -11,7 +11,7 @@ class ConvRBM():
     def __init__(self, Nv, filter_w, hid_b, vis_b):
         # filter: (Nw, Nw, 1, K)
         # hid_bias: (K,)
-        # vis_bias: (1,)
+        # vis_bias: (1,) --> changed to (Nv, Nv, 1) temporarily
         self.Nv = Nv
         self.Nw, self.K = filter_w.shape[0], filter_w.shape[-1]
         self.Nh = self.Nv - self.Nw + 1
@@ -60,14 +60,17 @@ class ConvRBM():
         t1 = tf.reduce_sum(tf.multiply(h, c), axis=(1,2,3))
         t2 = tf.reduce_sum(tf.multiply(self.hid_bias, 
                                          tf.reduce_sum(h, axis=(1,2))), axis=1)
-        t3 = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        #t3 = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        t3 = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
         
         return -tf.add(t1, tf.add(t2, t3))
             
     def free_energy(self, v):
         x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
         x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
-        t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        #t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        t = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
+        
         return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=(1,2)))
                 
     @staticmethod
@@ -94,7 +97,7 @@ class ConvRBM_Train(ConvRBM):
                                  stddev=0.01), dtype=tf.float32)
         
         self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
-        self.vis_bias = tf.Variable(tf.zeros(shape=(1,)), dtype=tf.float32)
+        self.vis_bias = tf.Variable(tf.zeros(shape=(self.Nv, self.Nv, 1)), dtype=tf.float32)
         
     def create_name(self):
         self.name = 'CRBML%d_W%dK%d'%(self.Nv, self.Nw, self.K)
