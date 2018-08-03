@@ -16,9 +16,11 @@ class ConvRBM():
         self.Nw, self.K = filter_w.shape[0], filter_w.shape[-1]
         self.Nh = self.Nv - self.Nw + 1
         
+        self.create_basic_parameters(Nv, filter_w, hid_b, vis_b)
+        
+    def create_basic_parameters(self, filter_w, hid_b, vis_b): 
         self.visible = tf.placeholder(tf.float32)
         
-        # Initialization according to Hinton Sec. 8
         self.filter = tf.Variable(filter_w, dtype=tf.float32)
         self.hid_bias = tf.Variable(hid_b, dtype=tf.float32)
         self.vis_bias = tf.Variable(vis_b, dtype=tf.float32)
@@ -92,12 +94,10 @@ class ConvRBM_Train(ConvRBM):
         self.visible = tf.placeholder(tf.float32)
         
         # Initialization according to Hinton Sec. 8
-        self.filter = tf.Variable(
-                tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), 
-                                 stddev=0.01), dtype=tf.float32)
-        
-        self.hid_bias = tf.Variable(tf.zeros(shape=(self.K,)), dtype=tf.float32)
-        self.vis_bias = tf.Variable(tf.zeros(shape=(self.Nv, self.Nv, 1)), dtype=tf.float32)
+        self.create_basic_parameters(
+                filter_w=tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), stddev=0.01),
+                hid_b=tf.zeros(shape=(self.K,)),
+                vis_b=tf.zeros(shape=(self.Nv, self.Nv, 1)))
         
     def create_name(self):
         self.name = 'CRBML%d_W%dK%d'%(self.Nv, self.Nw, self.K)
