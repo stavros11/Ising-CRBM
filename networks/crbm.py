@@ -72,7 +72,7 @@ class ConvRBM():
         return -tf.add(t1, tf.add(t2, t3))
             
     def free_energy(self, v):
-        x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
+        x = tf.tensordot(v, self.filter, axes=3)
         x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
         #t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
         t = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
