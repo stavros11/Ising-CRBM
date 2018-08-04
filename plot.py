@@ -7,25 +7,20 @@ Created on Fri Aug  3 14:37:10 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
+file_dir = 'C:/Users/Stavros/Documents/Scripts_and_programs/Ising-CRBM-Data'
 
 #from matplotlib import rcParams
 #rcParams.update({'font.size': 18})
 
-## Metrics ##
-#met = np.load('Trained_Models/Critical/CRBML8_W8K64BS50LR0.00100_VER2_EP500/metrics.npy')
-#
-#plt.plot(np.arange(len(met)), met.T[0])
-#plt.show()
-
-CRIT = True
-iT = 20
+CRIT = False
+iT = 10
 
 L = 8
 BS = 50
-EP = 2000
+EP = 5000
 Nw = 8
 K = 64
-VER = 2
+VER = 3
 
 NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 
@@ -37,8 +32,7 @@ else:
 
 ## Observables ##
 kI, kF = 1, 3000
-obs = np.load('Observables/%s/%s/k%d_%d.npy'%(temp_str, NAME, kI, kF))
-met = np.load('Observables/%s/%s/metrics.npy'%(temp_str, NAME))
+obs = np.load('%s/Observables/%s/%s/k%d_%d.npy'%(file_dir, temp_str, NAME, kI, kF))
 
 quant_list = ['$M$', '$E$', '$\chi $', '$C_V$', '$M^2$', '$M^4$', '$E^2$',
               '$C(L/2)$', '$C(L/4)$', '$S_0$', '$S_1$', '$S_2$']
@@ -62,13 +56,4 @@ def plot_errors(q=0, figsize=(7, 4)):
     plt.axhline(y=0, linestyle='--', color='k')
     plt.xlabel('$k$', fontsize=20)
     plt.ylabel(quant_list[q] + ' - Error', fontsize=20)
-    plt.show()
-    
-def plot_mse(figsize=(7, 4)):
-    msg_step = EP // len(met)
-    
-    plt.figure(figsize=figsize)
-    plt.plot(np.arange(0, EP, msg_step), met.T[0], color='blue')
-    plt.xlabel('Epoch', fontsize=20)
-    plt.ylabel('MSE', fontsize=20)
     plt.show()

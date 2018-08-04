@@ -7,16 +7,17 @@ Created on Sat Aug  4 14:06:07 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
+file_dir = 'C:/Users/Stavros/Documents/Scripts_and_programs/Ising-CRBM-Data'
 
 CRIT = False
-iT = 20
+iT = 10
 
 L = 8
 BS = 50
 EP = 5000
 Nw = 8
 K = 64
-VER = 2
+VER = 3
 
 NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 
@@ -26,10 +27,20 @@ else:
     from data.directories import T_list
     temp_str = 'T%.4f'%T_list[iT]
     
-w = np.load('Observables/%s/%s/trained_weights.npy'%(temp_str, NAME))
+w = np.load('%s/Observables/%s/%s/trained_weights.npy'%(file_dir, temp_str, NAME))
+met = np.load('%s/Observables/%s/%s/metrics.npy'%(file_dir, temp_str, NAME))
 
-def weight_hist(bins=20, figsize=(7, 4)):
+def weight_hist(xlim=2, bins=100, figsize=(7, 4)):
     plt.figure(figsize=figsize)
     plt.hist(w.ravel(), bins=bins)
-    plt.xlim((-1, 1))
+    plt.xlim((-xlim, xlim))
+    plt.show()
+
+def plot_mse(figsize=(7, 4)):
+    msg_step = EP // len(met)
+    
+    plt.figure(figsize=figsize)
+    plt.plot(np.arange(0, EP, msg_step), met.T[0], color='blue')
+    plt.xlabel('Epoch', fontsize=20)
+    plt.ylabel('MSE', fontsize=20)
     plt.show()
