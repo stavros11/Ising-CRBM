@@ -59,12 +59,18 @@ class ConvRBM():
         return v_samples
     
     def calculate_energy(self, v, h):
+        
+        Wv = tf.tensordot(v, self.filter, axes=3)
+        t1 = tf.reduce_sum(tf.multiply(h, Wv), axis=1)
+        t2 = tf.reduce_sum(tf.multiply(h, self.hid_bias), axis=1)
+        t3 = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
+        
         c = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
         t1 = tf.reduce_sum(tf.multiply(h, c), axis=(1,2,3))
         t2 = tf.reduce_sum(tf.multiply(self.hid_bias, 
                                          tf.reduce_sum(h, axis=(1,2))), axis=1)
         #t3 = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
-        t3 = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
+        
         
         return -tf.add(t1, tf.add(t2, t3))
             
