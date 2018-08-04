@@ -27,14 +27,11 @@ class ConvRBM():
         self.vis_bias = tf.Variable(vis_b, dtype=tf.float32)
                     
     def prob_given_v(self, v):
-        x = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
+        x = tf.tensordot(v, self.filter, axes=3)
         return tf.sigmoid(tf.add(x, self.hid_bias))
     
     def prob_given_h(self, h):
-        batch_size = tf.shape(h)[0]
-        x = tf.nn.conv2d_transpose(h, self.filter, strides=(1,1,1,1), padding="VALID",
-                                   output_shape=(batch_size, self.Nv, 
-                                                 self.Nv, 1))
+        x = tf.tensordot(h, self.filter, axes=[[1],[3]])
         return tf.sigmoid(tf.add(x, self.vis_bias))
     
     def create_gibbs_sampler(self, k=2):
