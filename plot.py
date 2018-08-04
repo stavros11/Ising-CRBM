@@ -25,7 +25,7 @@ BS = 50
 EP = 2000
 Nw = 8
 K = 64
-VER = 1
+VER = 2
 
 NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 
