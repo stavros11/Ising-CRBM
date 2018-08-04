@@ -163,7 +163,7 @@ class ConvRBM_Train(ConvRBM):
         #variables for sampling (num_samples is the number of samples to return):
         # from Torlai PSI tutorial
         self.hidden_samples = tf.Variable(
-                self.sample_tensor(tf.constant(0.5, shape=(self.args.BS, self.Nh, self.Nh, self.K))), 
+                self.sample_tensor(tf.constant(0.5, shape=(self.args.BS, self.K))), 
                                   trainable=False)
         
         ## For learning rate decay
