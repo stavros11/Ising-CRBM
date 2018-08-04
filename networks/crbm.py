@@ -72,12 +72,10 @@ class ConvRBM():
         return -tf.add(t1, tf.add(t2, t3))
             
     def free_energy(self, v):
-        x = tf.tensordot(v, self.filter, axes=3)
-        x = tf.add(tf.reduce_sum(x, axis=-1), tf.reduce_sum(self.hid_bias))
-        #t = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
+        x = tf.add(tf.tensordot(v, self.filter, axes=3), self.hid_bias)
         t = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
         
-        return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=(1,2)))
+        return -tf.add(t, tf.reduce_sum(tf.nn.softplus(x), axis=1))
                 
     @staticmethod
     def sample_tensor(prob):
