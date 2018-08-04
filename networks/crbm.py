@@ -6,6 +6,7 @@ Created on Wed Jul 11 14:39:14 2018
 """
 
 import tensorflow as tf
+from numpy import sqrt
 
 class ConvRBM():
     def __init__(self, Nv, filter_w, hid_b, vis_b):
@@ -94,8 +95,16 @@ class ConvRBM_Train(ConvRBM):
         self.visible = tf.placeholder(tf.float32)
         
         # Initialization according to Hinton Sec. 8
+#        self.create_basic_parameters(
+#                filter_w=tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), stddev=0.01),
+#                hid_b=tf.zeros(shape=(self.K,)),
+#                vis_b=tf.zeros(shape=(self.Nv, self.Nv, 1)))
+        
+        # Initialization according to Torlai
+        init_width = 2 * sqrt(self.Nv**2 + self.Nh**2*self.K)
         self.create_basic_parameters(
-                filter_w=tf.random_normal(shape=(self.Nw, self.Nw, 1, self.K), stddev=0.01),
+                filter_w=tf.random_uniform(shape=(self.Nw, self.Nw, 1, self.K), 
+                                           minval=-1/init_width, maxval=1/init_width),
                 hid_b=tf.zeros(shape=(self.K,)),
                 vis_b=tf.zeros(shape=(self.Nv, self.Nv, 1)))
         
