@@ -30,9 +30,10 @@ class Trainer(ConvRBM_Train):
             np.save('%s/metrics.npy'%directory, metrics)
                     
         ## Save weights
-        np.save('%s/weights.npy'%directory, np.array(self.W_list))
-        np.save('%s/hid_bias.npy'%directory, np.array(self.hid_bias_list))
-        np.save('%s/vis_bias.npy'%directory, np.array(self.vis_bias_list))
+        if self.args.SAVEWL:
+            np.save('%s/weights.npy'%directory, np.array(self.W_list))
+            np.save('%s/hid_bias.npy'%directory, np.array(self.hid_bias_list))
+            np.save('%s/vis_bias.npy'%directory, np.array(self.vis_bias_list))
         
         np.save('%s/trained_weights.npy'%directory, np.array(self.W_list)[-1])
         np.save('%s/trained_hid_bias.npy'%directory, np.array(self.hid_bias_list)[-1])
