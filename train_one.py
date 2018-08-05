@@ -43,6 +43,7 @@ parser.add_argument('-LREP', type=int, default=1000, help='epoch to start learni
 parser.add_argument('-WAVEP', type=int, default=None, help='epoch to start weight averaging')
 parser.add_argument('-WAVNR', type=int, default=5, help='number of weights to average')
 parser.add_argument('-WAVST', type=int, default=5, help='step to make the updates')
+parser.add_argument('-SAVEWL', type=bool, default=False, help='save weight list')
 
 ## RBM convolutions parameters
 parser.add_argument('-Nw', nargs='+', type=int, default=None, help='filter size')
