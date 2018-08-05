@@ -12,15 +12,15 @@ file_dir = 'C:/Users/Stavros/Documents/Scripts_and_programs/Ising-CRBM-Data'
 #from matplotlib import rcParams
 #rcParams.update({'font.size': 18})
 
-CRIT = False
-iT = 10
+CRIT = True
+iT = 20
 
 L = 8
 BS = 50
-EP = 5000
+EP = 2000
 Nw = 8
 K = 64
-VER = 3
+VER = 1
 
 NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 
@@ -48,6 +48,21 @@ def plot_quantity(q=0, figsize=(7, 4), kmax=None):
     plt.axhline(y=obs[0, q], linestyle='--', color='k')
     plt.xlabel('$k$', fontsize=20)
     plt.ylabel(quant_list[q], fontsize=20)
+    plt.show()
+    
+def plot_four(figsize=(10, 6), kmax=None):
+    plt.figure(figsize=figsize)
+    
+    for q in range(4):
+        plt.subplot(221+q)
+        if kmax == None:
+            plt.plot(np.arange(kI, kF+1), obs[1:, q], color='blue')
+        else:
+            plt.plot(np.arange(kI, kmax+1), obs[1:kmax+1, q], color='blue')
+        plt.axhline(y=obs[0, q], linestyle='--', color='k')
+        plt.xlabel('$k$', fontsize=20)
+        plt.ylabel(quant_list[q], fontsize=20)
+        
     plt.show()
     
 def plot_errors(q=0, figsize=(7, 4)):
