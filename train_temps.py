@@ -28,8 +28,8 @@ parser.add_argument('-BSC', type=int, default=5000, help='calculation batch size
 
 ## Early stopping options
 parser.add_argument('-ES', type=bool, default=True, help='use early stopping')
-parser.add_argument('-ESPAT', type=int, default=50, help='early stopping patience')
-parser.add_argument('-ESTHR', type=float, default=5e-4, help='early stopping threshold')
+parser.add_argument('-ESPAT', type=int, default=300, help='early stopping patience')
+parser.add_argument('-ESTHR', type=float, default=3e-4, help='early stopping threshold')
 
 ## Learning rate options
 parser.add_argument('-LR', type=float, default=0.001, help='initial learning rate')
@@ -90,7 +90,7 @@ def main(args):
         rbm.prepare_training()
     
         ## Set up directory for saving       
-        save_dir = 'Trained_Models/%s'%(rbm.name)
+        save_dir = 'Trained_Models/MultipleTemps/%s'%(rbm.name)
         dl.create_directory(save_dir)
         save_dir += '/T%.4f'%T
         dl.create_directory(save_dir)
