@@ -18,7 +18,7 @@ LOAD_WEIGHTS = True
 L = 8
 BS = 50
 Nw = 8
-K = 64
+K = 96
 VER = 3
 kI, kF = 1, 200
 
@@ -77,6 +77,7 @@ def plot_four_converged(figsize=(10, 6)):
     
 def weight_hist(iT=0, xlim=2, bins=100, figsize=(7, 4)):
     plt.figure(figsize=figsize)
+    plt.title('T=%.4f'%T_list[iT])
     plt.hist(w[iT].ravel(), bins=bins)
     plt.xlim((-xlim, xlim))
     plt.show()
