@@ -27,7 +27,7 @@ NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 if CRIT:
     temp_str = 'Critical'
 else:
-    from data.directories import T_list
+    T_list = np.linspace(0.01, 4.538, 32)
     temp_str = 'T%.4f'%T_list[iT]
 
 ## Observables ##

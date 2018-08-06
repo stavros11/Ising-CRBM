@@ -9,22 +9,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 file_dir = 'C:/Users/Stavros/Documents/Scripts_and_programs/Ising-CRBM-Data'
 
-CRIT = False
-iT = 10
+CRIT = True
+iT = 20
 
 L = 8
 BS = 50
-EP = 5000
+EP = 2000
 Nw = 8
 K = 64
-VER = 3
+VER = 1
 
 NAME = 'CRBML%d_W%dK%dBS%dLR0.00100_VER%d_EP%d'%(L, Nw, K, BS, VER, EP)
 
 if CRIT:
     temp_str = 'Critical'
 else:
-    from data.directories import T_list
+    T_list = np.linspace(0.01, 4.538, 32)
     temp_str = 'T%.4f'%T_list[iT]
     
 w = np.load('%s/Observables/%s/%s/trained_weights.npy'%(file_dir, temp_str, NAME))
