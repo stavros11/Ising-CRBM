@@ -45,7 +45,7 @@ class ConvRBM():
     
     def create_gibbs_sampler_random(self, n_samples, k=1):
         h_samples = tf.Variable(self.sample_tensor(
-                tf.constant(0.5, shape=(n_samples, self.Nh, self.Nh, self.K))), 
+                tf.constant(0.5, shape=(n_samples, self.K))), 
                                   trainable=False)
         
         v_samples = self.sample_tensor(self.prob_given_h(h_samples))
@@ -56,18 +56,10 @@ class ConvRBM():
         return v_samples
     
     def calculate_energy(self, v, h):
-        
         Wv = tf.tensordot(v, self.filter, axes=3)
         t1 = tf.reduce_sum(tf.multiply(h, Wv), axis=1)
         t2 = tf.reduce_sum(tf.multiply(h, self.hid_bias), axis=1)
         t3 = tf.reduce_sum(tf.multiply(v, self.vis_bias), axis=(1,2,3))
-        
-        c = tf.nn.conv2d(v, self.filter, strides=(1,1,1,1), padding="VALID")
-        t1 = tf.reduce_sum(tf.multiply(h, c), axis=(1,2,3))
-        t2 = tf.reduce_sum(tf.multiply(self.hid_bias, 
-                                         tf.reduce_sum(h, axis=(1,2))), axis=1)
-        #t3 = tf.multiply(self.vis_bias, tf.reduce_sum(v, axis=(1,2,3)))
-        
         
         return -tf.add(t1, tf.add(t2, t3))
             
@@ -133,7 +125,7 @@ class ConvRBM_Train(ConvRBM):
         
     def loss_for_grad(self, v, k=2):
         # sample hidden from data
-        h_data = tf.stop_gradient(self.sample_tensor(self.prob_given_v(v)))
+        h_data = self.sample_tensor(self.prob_given_v(v))
         data_term = self.calculate_energy(v, h_data)
         
         # CD-k
@@ -146,7 +138,7 @@ class ConvRBM_Train(ConvRBM):
 #        recon_term = self.calculate_energy(v_recon, h_recon)
         
         h_samples = self.hidden_samples
-        v_samples = tf.stop_gradient(self.sample_tensor(self.prob_given_h(h_samples)))
+        v_samples = self.sample_tensor(self.prob_given_h(h_samples))
         h_samples = self.sample_tensor(self.prob_given_v(v_samples))
         for i in range(1, k):
             v_samples = self.sample_tensor(self.prob_given_h(h_samples))
@@ -187,4 +179,3 @@ class ConvRBM_Train(ConvRBM):
         self.v_gibbs_recon_op = self.create_gibbs_sampler(k=self.args.GBMSE)
         self.v_gibbs_test_op = self.create_gibbs_sampler_random(self.args.BSC, k=self.args.GBTE)
         self.free_energy_op = tf.reduce_mean(self.free_energy(self.visible))
-
