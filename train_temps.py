@@ -69,8 +69,8 @@ def main(args):
         args.Nw, args.K = args.Nw[0], args.K[0]
     
     ## Load data
-    train_data = dl.add_index(dl.read_file(L=args.L, n_samples=10000, train=True))
-    val_data = dl.add_index(dl.read_file(L=args.L, n_samples=10000, train=False))
+    train_data = dl.add_index(dl.Z2_zero_majority(dl.read_file(L=args.L, n_samples=10000, train=True)))
+    val_data = dl.add_index(dl.Z2_zero_majority(dl.read_file(L=args.L, n_samples=10000, train=False)))
     
     for (iT, T) in enumerate(T_list):
         ## Prepare RBM

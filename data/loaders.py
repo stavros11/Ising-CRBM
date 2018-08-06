@@ -43,3 +43,18 @@ def create_directory(d):
     ## Create directory if it doesn't exist ##
     if not path.exists(d):
         mkdir(d)
+        
+###################################
+########## PREPROCESSING ##########
+###################################
+
+def Z2_zero_majority(data):
+    ## Flips spins (preserving Z2 symmetry) so that the majority of them are 0
+    states = 2 * data - 1
+    flipper = 2 * (states.sum(axis=(1,2)) < 0).astype(np.int) - 1
+    
+    return (np.multiply(flipper[:, np.newaxis, np.newaxis], states) > 0).astype(np.int)
+    
+    
+    
+    
